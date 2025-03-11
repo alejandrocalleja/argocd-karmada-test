@@ -20,6 +20,10 @@ spec:
       - image: curlimages/curl
         name: curl
         command: ["sleep", "365d"]
+        resources:
+          requests:
+            cpu: "1"
+            memory: 2Gi
 --- 
 apiVersion: policy.karmada.io/v1alpha1
 kind: PropagationPolicy

@@ -1,0 +1,72 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: test-server
+  name: test-server
+  namespace: default
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: test-server
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        app: test-server
+    spec:
+      containers:
+      - image: flomesh/pipy
+        name: pipy
+        command: ["pipy"]
+        args: ["-e", "pipy().listen(8080).serveHTTP(() => new Message(os.env['HOSTNAME'] +'\n'))"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: test-server
+  name: test-server
+  namespace: default
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: test-server
+---
+apiVersion: policy.karmada.io/v1alpha1
+kind: PropagationPolicy
+metadata:
+  name: test-server-policy
+spec:
+  resourceSelectors:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: test-server
+    - apiVersion: v1
+      kind: Service
+      name: test-server
+  placement:
+    clusterAffinities:
+    - affinityName: optimize-for
+      labelSelector:
+        matchLabels:
+          optimize-for: green-power
+    - affinityName: clusters
+      clusterNames:
+      - ansible1
+      - ansible2
+      - k3s-cluster
+    replicaScheduling:
+      replicaSchedulingType: Duplicated
+    spreadConstraints:
+      - spreadByField: provider
+        maxGroups: 1
+        minGroups: 1
+      - spreadByField: cluster
+        maxGroups: 1
+        minGroups: 1

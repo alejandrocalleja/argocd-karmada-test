@@ -20,6 +20,6 @@ spec:
   types:
     - CrossCluster
   consumerClusters:
-    - name: ansible1
-  providerClusters:
     - name: ansible2
+  providerClusters:
+    - name: ansible1

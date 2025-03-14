@@ -20,6 +20,10 @@ spec:
         name: pipy
         command: ["pipy"]
         args: ["-e", "pipy().listen(8080).serveHTTP(() => new Message(os.env['HOSTNAME'] +'\n'))"]
+        resources:
+          requests:
+            cpu: "1"
+            memory: 2Gi
 ---
 apiVersion: v1
 kind: Service
@@ -54,10 +58,15 @@ spec:
       kind: Service
       name: failover-test2
   placement:
-    clusterAffinity:
+    clusterAffinities:
+    - affinityName: optimize-for
+      labelSelector:
+        matchLabels:
+          optimize-for: green-power
+    - affinityName: clusters
       clusterNames:
-        - ansible1
-        - ansible2
+      - ansible1
+      - ansible2
     replicaScheduling:
       replicaDivisionPreference: Weighted
       replicaSchedulingType: Divided

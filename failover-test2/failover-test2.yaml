@@ -1,0 +1,73 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: failover-test2
+  name: failover-test2
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: failover-test2
+  template:
+    metadata:
+      labels:
+        app: failover-test2
+    spec: 
+      containers:
+      - image: flomesh/pipy
+        name: pipy
+        command: ["pipy"]
+        args: ["-e", "pipy().listen(8080).serveHTTP(() => new Message(os.env['HOSTNAME'] +'\n'))"]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: failover-test2
+  name: failover-test2
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: failover-test2
+---
+apiVersion: policy.karmada.io/v1alpha1
+kind: PropagationPolicy
+metadata:
+  name: failover-test-policy2
+spec:
+  failover:
+    application:
+      decisionConditions:
+        tolerationSeconds: 10
+      purgeMode: Immediately
+  propagateDeps: true
+  resourceSelectors:
+    - apiVersion: apps/v1
+      kind: Deployment
+      name: failover-test2
+    - apiVersion: v1
+      kind: Service
+      name: failover-test2
+  placement:
+    clusterAffinity:
+      clusterNames:
+        - ansible1
+        - ansible2
+    replicaScheduling:
+      replicaDivisionPreference: Weighted
+      replicaSchedulingType: Divided
+      weightPreference:
+        staticWeightList:
+          - targetCluster:
+              clusterNames:
+                - ansible1
+            weight: 10
+          - targetCluster:
+              clusterNames:
+                - ansible2
+            weight: 1

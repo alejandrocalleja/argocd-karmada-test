@@ -25,6 +25,20 @@ spec:
             cpu: "1"
             memory: 2Gi
 ---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    app: failover-test2
+  name: failover-test2
+spec:
+  ports:
+  - port: 8080
+    protocol: TCP
+    targetPort: 8080
+  selector:
+    app: failover-test2
+---
 apiVersion: policy.karmada.io/v1alpha1
 kind: PropagationPolicy
 metadata:
@@ -40,6 +54,9 @@ spec:
     - apiVersion: apps/v1
       kind: Deployment
       name: failover-test2
+    - apiVersion: v1
+      kind: Service
+      name: failover-test2
   placement:
     clusterAffinities:
     - affinityName: optimize-for
@@ -51,15 +68,11 @@ spec:
       - ansible1
       - ansible2
     replicaScheduling:
-      replicaDivisionPreference: Weighted
-      replicaSchedulingType: Divided
-      weightPreference:
-        staticWeightList:
-          - targetCluster:
-              clusterNames:
-                - ansible1
-            weight: 10
-          - targetCluster:
-              clusterNames:
-                - ansible2
-            weight: 1
+      replicaSchedulingType: Duplicated
+    spreadConstraints:
+      - spreadByField: provider
+        maxGroups: 1
+        minGroups: 1
+      - spreadByField: cluster
+        maxGroups: 1
+        minGroups: 1

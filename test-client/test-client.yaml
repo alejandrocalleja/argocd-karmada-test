@@ -42,9 +42,7 @@ spec:
           optimize-for: green-power
     - affinityName: clusters
       clusterNames:
-      - ansible1
-      - ansible2
-      - k3s-cluster
+      - nettest2-master11
     replicaScheduling:
       replicaSchedulingType: Duplicated
     spreadConstraints:
